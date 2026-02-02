@@ -42,22 +42,19 @@ export const analyzePlantWithGemini = async (imageBase64) => {
   `;
 
     // List of models to try in order
-    // Updated based on available models for this key (2.0/2.5 versions)
+    // Prioritize fast, high-limit models. Removed legacy/strict-limit models.
     const modelsToTry = [
         "gemini-2.0-flash",
-        "gemini-2.0-flash-001",
-        "gemini-2.5-flash",
+        "gemini-2.0-flash-lite", // Try lite version too
         "gemini-1.5-flash",
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-pro",
-        "gemini-pro-vision"
+        "gemini-1.5-flash-8b",
+        "gemini-1.5-flash-latest"
     ];
 
+    let significantError = null; // Store the most meaningful error (e.g. 429, 503) instead of just the last 404
     let lastError = null;
-    let lastTriedModel = "";
 
     for (const modelName of modelsToTry) {
-        lastTriedModel = modelName;
         try {
             console.log(`Attempting to use model: ${modelName}`);
             const model = genAI.getGenerativeModel({ model: modelName });
@@ -82,6 +79,13 @@ export const analyzePlantWithGemini = async (imageBase64) => {
             console.warn(`Model ${modelName} failed:`, error.message);
             lastError = error;
 
+            // If we hit a Rate Limit (429) or Overloaded (503), keep this error as it's the "real" reason
+            // why we might fail, rather than a subsequent 404.
+            if (error.message.includes("429") || error.message.includes("503")) {
+                significantError = error;
+            }
+
+            // If the key is invalid, stop immediately
             if (error.message.includes("API key not valid")) {
                 throw error;
             }
@@ -89,13 +93,21 @@ export const analyzePlantWithGemini = async (imageBase64) => {
     }
 
     // If we get here, all models failed
-    console.error("All Gemini models failed.", lastError);
+    const finalError = significantError || lastError;
+    console.error("All Gemini models failed.", finalError);
 
     const keyDebug = cleanKey ? `(Key前10碼: ${cleanKey.substring(0, 10)}...)` : "(Key為空)";
 
-    if (lastError?.message?.includes("404") || lastError?.message?.includes("not found")) {
-        throw new Error(`無法找到模型 (404)。${keyDebug} 請確認您的 Key 是否支援 '${lastTriedModel}'。`);
+    // Customize error message based on the type of error
+    let userMessage = "無法連線至 AI 伺服器";
+
+    if (finalError?.message?.includes("429")) {
+        userMessage = "使用流量過大 (429)，請稍等幾秒後再試。";
+    } else if (finalError?.message?.includes("503")) {
+        userMessage = "Google AI 伺服器忙碌中 (503)，請重試。";
+    } else if (finalError?.message?.includes("404")) {
+        userMessage = "找不到支援的模型 (404)，請檢查 Key 權限。";
     }
 
-    throw new Error(`識別失敗: ${lastError?.message || "無法連線至 AI 伺服器"} ${keyDebug}`);
+    throw new Error(`${userMessage} ${keyDebug}`);
 };
