@@ -114,6 +114,15 @@ const CameraCapture = ({ onCapture, onBack }) => {
                             muted
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
+                        <div style={{
+                            position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', color: 'white', zIndex: 10,
+                            fontSize: '1rem',
+                            fontWeight: 'bold',
+                            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                            pointerEvents: 'none'
+                        }}>
+                            PlantDoctor - 植物健康專家 <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>v1.2</span>
+                        </div>
                         {/* Guide Overlay */}
                         <div style={{
                             position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
