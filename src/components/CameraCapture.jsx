@@ -121,7 +121,7 @@ const CameraCapture = ({ onCapture, onBack }) => {
                             textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                             pointerEvents: 'none'
                         }}>
-                            PlantDoctor - 植物健康專家 <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>v1.2</span>
+                            PlantDoctor - 植物健康專家 <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>v1.3</span>
                         </div>
                         {/* Guide Overlay */}
                         <div style={{
